@@ -18,8 +18,23 @@ dotenv.config();
 
 const app = express();
 
+// Test endpoint that doesn't require DB (for debugging)
+app.get('/api/test', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Vercel serverless function is working!',
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV
+    });
+});
+
 // Middleware to ensure DB connection on each request (important for serverless)
 app.use(async (req, res, next) => {
+    // Skip DB connection for test endpoint
+    if (req.path === '/api/test' || req.path === '/api/health') {
+        return next();
+    }
+    
     try {
         await connectDB();
         next();
@@ -27,7 +42,8 @@ app.use(async (req, res, next) => {
         console.error('Database connection error:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'خطأ في الاتصال بقاعدة البيانات' 
+            message: 'خطأ في الاتصال بقاعدة البيانات',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
@@ -92,4 +108,13 @@ app.use((req, res) => {
 // Error Handler Middleware
 app.use(errorHandler);
 
+// Export for Vercel serverless
 export default app;
+
+// For local testing
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+    });
+}
