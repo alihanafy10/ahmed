@@ -74,6 +74,7 @@ export const register = async (req, res, next) => {
             user
         });
     } catch (error) {
+        console.error('Registration error:', error);
         next(error);
     }
 };

@@ -2,10 +2,9 @@ const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    // Log error for development
-    if (process.env.NODE_ENV === 'development') {
-        console.error(err);
-    }
+    // Always log error to console for debugging
+    console.error('❌ Error:', err.message);
+    console.error('Stack:', err.stack);
 
     // Mongoose bad ObjectId
     if (err.name === 'CastError') {
@@ -16,7 +15,11 @@ const errorHandler = (err, req, res, next) => {
     // Mongoose duplicate key
     if (err.code === 11000) {
         const field = Object.keys(err.keyPattern)[0];
-        const message = `${field} already exists`;
+        let arabicField = field;
+        if (field === 'email') arabicField = 'البريد الإلكتروني';
+        if (field === 'phone') arabicField = 'رقم الهاتف';
+        if (field === 'nationalId') arabicField = 'الرقم القومي';
+        const message = `${arabicField} مسجل بالفعل`;
         error = { message, statusCode: 400 };
     }
 
@@ -28,18 +31,19 @@ const errorHandler = (err, req, res, next) => {
 
     // JWT errors
     if (err.name === 'JsonWebTokenError') {
-        const message = 'Invalid token';
+        const message = 'رمز التحقق غير صحيح';
         error = { message, statusCode: 401 };
     }
 
     if (err.name === 'TokenExpiredError') {
-        const message = 'Token expired';
+        const message = 'انتهت صلاحية رمز التحقق';
         error = { message, statusCode: 401 };
     }
 
     res.status(error.statusCode || 500).json({
         success: false,
-        message: error.message || 'Server Error'
+        message: error.message || 'حدث خطأ في الخادم',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 };
 
