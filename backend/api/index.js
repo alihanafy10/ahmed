@@ -61,12 +61,23 @@ app.get('/', (req, res) => {
     res.json({ 
         message: 'Accident Report API',
         version: '1.0.0',
+        status: 'online',
+        timestamp: new Date().toISOString(),
         endpoints: {
             health: '/api/health',
             auth: '/api/auth',
             reports: '/api/reports',
             users: '/api/users'
         }
+    });
+});
+
+app.get('/api', (req, res) => {
+    res.json({ 
+        message: 'Accident Report API',
+        version: '1.0.0',
+        status: 'online',
+        timestamp: new Date().toISOString()
     });
 });
 
