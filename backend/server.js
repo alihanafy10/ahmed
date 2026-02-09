@@ -24,18 +24,25 @@ dotenv.config();
 
 const app = express();
 
-// Database connection
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('✅ MongoDB Connected Successfully');
-    } catch (error) {
-        console.error('❌ MongoDB Connection Error:', error.message);
-        process.exit(1);
-    }
-};
+// Import database connection
+import connectDB from './config/db.js';
 
-connectDB();
+// Connect to database (for serverless, this will reconnect as needed)
+connectDB().catch(err => console.error('Initial DB connection failed:', err));
+
+// Middleware to ensure DB connection on each request (important for serverless)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error('Database connection error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'خطأ في الاتصال بقاعدة البيانات' 
+        });
+    }
+});
 
 // Middleware
 app.use(helmet()); // Security headers
