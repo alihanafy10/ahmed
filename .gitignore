@@ -8,6 +8,8 @@ yarn-error.log*
 .env
 .env.local
 .env.production
+backend/.env
+frontend/.env
 
 # Build outputs
 dist/
