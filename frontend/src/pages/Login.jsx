@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaLock, FaSignInAlt, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
-import { loginUser } from '../utils/mockDb';
+import { authAPI } from '../config/api';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -14,6 +14,8 @@ const Login = () => {
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [apiError, setApiError] = useState('');
 
     // Regex Patterns (reused/simplified)
     const patterns = {
@@ -54,19 +56,31 @@ const Login = () => {
         setTouched(prev => ({ ...prev, [e.target.name]: true }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setTouched({ identifier: true, password: true });
         
-        if (validate()) {
-            const result = loginUser(formData.identifier, formData.password);
-            if (result.success) {
-                // In a real app, we would verify credentials here
-                // Save user session if needed
-                localStorage.setItem('currentUser', JSON.stringify(result.user));
-                navigate('/face-capture');
-            } else {
-                alert(result.message);
+        if (validate() && !isSubmitting) {
+            setIsSubmitting(true);
+            setApiError('');
+
+            try {
+                const response = await authAPI.login(formData);
+
+                if (response.data.success) {
+                    // Save token and user data
+                    localStorage.setItem('token', response.data.token);
+                    localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+                    
+                    // Navigate to face capture or home
+                    navigate('/face-capture');
+                }
+            } catch (error) {
+                const errorMessage = error.response?.data?.message || 'حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.';
+                setApiError(errorMessage);
+                console.error('Login error:', error);
+            } finally {
+                setIsSubmitting(false);
             }
         }
     };
@@ -82,6 +96,14 @@ const Login = () => {
                 <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl backdrop-blur-sm relative overflow-hidden">
                      {/* Blob effect */}
                      <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-blue-500 via-purple-500 to-pink-500" />
+
+                    {/* API Error Message */}
+                    {apiError && (
+                        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm">
+                            <FaExclamationCircle className="inline ml-2" />
+                            {apiError}
+                        </div>
+                    )}
 
                     <div className="mb-6">
                         <label className="block text-zinc-400 text-sm mb-2 font-medium">البريد الإلكتروني أو الهاتف</label>
@@ -130,9 +152,14 @@ const Login = () => {
 
                     <button
                         type="submit"
-                        className="w-full mt-2 py-4 bg-white text-zinc-950 rounded-xl font-bold text-lg hover:bg-zinc-200 transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2"
+                        disabled={isSubmitting}
+                        className={`w-full mt-2 py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
+                            isSubmitting 
+                            ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                            : 'bg-white text-zinc-950 hover:bg-zinc-200 shadow-white/10'
+                        }`}
                     >
-                         <FaSignInAlt /> تسجيل الدخول
+                         <FaSignInAlt /> {isSubmitting ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
                     </button>
 
                     <p className="text-center text-zinc-400 mt-6 pt-6 border-t border-zinc-800">

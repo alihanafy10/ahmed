@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import LocationCapture from '../components/LocationCapture';
 import CameraCapture from '../components/CameraCapture';
 import VoiceRecorder from '../components/VoiceRecorder';
+import { reportAPI } from '../config/api';
 
 const AccidentReport = ({ capturedFace }) => {
   const [description, setDescription] = useState('');
@@ -12,43 +13,63 @@ const AccidentReport = ({ capturedFace }) => {
   const [voice, setVoice] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!description || description.trim().length < 10) {
+        setError('يرجى إدخال وصف للحادث (10 أحرف على الأقل)');
+        return;
+    }
+    
+    if (!location || !location.latitude || !location.longitude) {
+        setError('يرجى تحديد موقع الحادث');
+        return;
+    }
+
     setIsSubmitting(true);
+    setError('');
 
-    const formData = new FormData();
-    
-    // Append User Data
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (user) {
-        formData.append('reporter_name', user.fullName || '');
-        formData.append('reporter_nationalId', user.nationalId || '');
-        formData.append('reporter_phone', user.phone || '');
-        formData.append('reporter_email', user.email || '');
-    }
-    if(location) formData.append('location', JSON.stringify(location));
-    
-    // Append all media files
-    mediaFiles.forEach((file, index) => {
-        formData.append(`media_${index}`, file);
-    });
+    try {
+        const formData = new FormData();
+        
+        // Append description
+        formData.append('description', description);
+        
+        // Append location
+        formData.append('location', JSON.stringify(location));
+        
+        // Append all media files
+        mediaFiles.forEach((file, index) => {
+            formData.append(`media_${index}`, file);
+        });
 
-    if (capturedFace) formData.append('face_capture', capturedFace);
+        // Append face capture if available
+        if (capturedFace) {
+            formData.append('face_capture', capturedFace);
+        }
 
-    if(voice) formData.append('voice', voice);
-    formData.append('description', description);
+        // Append voice recording if available
+        if (voice) {
+            formData.append('voice', voice);
+        }
 
-    // Simulate API call
-    console.log("Submitting Form Data:");
-    for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-    }
+        // Submit to API
+        const response = await reportAPI.create(formData);
 
-    setTimeout(() => {
+        if (response.data.success) {
+            console.log('Report submitted successfully:', response.data.report);
+            setSubmitted(true);
+        }
+    } catch (err) {
+        console.error('Error submitting report:', err);
+        const errorMessage = err.response?.data?.message || 'حدث خطأ أثناء إرسال البلاغ. حاول مرة أخرى.';
+        setError(errorMessage);
+    } finally {
         setIsSubmitting(false);
-        setSubmitted(true);
-    }, 1500);
+    }
   };
 
   if (submitted) {
@@ -88,6 +109,17 @@ const AccidentReport = ({ capturedFace }) => {
 
       <main className="max-w-4xl mx-auto px-4 pt-8">
         
+        {/* Error Message */}
+        {error && (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-2xl p-5 flex items-start gap-4 mb-8">
+                <FaExclamationCircle className="text-red-500 text-2xl mt-0.5 ml-2 shrink-0" />
+                <div>
+                    <h3 className="text-base font-bold text-red-500 mb-1">خطأ</h3>
+                    <p className="text-sm text-red-400 leading-relaxed">{error}</p>
+                </div>
+            </div>
+        )}
+
         {/* Warning Banner */}
         <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-5 flex items-start gap-4 mb-8 shadow-[0_0_20px_rgba(245,158,11,0.05)]">
            <FaExclamationCircle className="text-amber-500 text-2xl mt-0.5 ml-2 shrink-0" />
@@ -148,8 +180,8 @@ const AccidentReport = ({ capturedFace }) => {
                  <div className="pt-4 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                     <button
                         type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-lg py-5 rounded-2xl transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3 shadow-xl shadow-red-900/20 active:scale-[0.99]"
+                        disabled={isSubmitting || !description || !location}
+                        className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-lg py-5 rounded-2xl transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl shadow-red-900/20 active:scale-[0.99]"
                     >
                         {isSubmitting ? (
                             <>
