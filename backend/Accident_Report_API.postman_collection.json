@@ -1,0 +1,241 @@
+{
+	"info": {
+		"_postman_id": "accident-report-api-2024",
+		"name": "Accident Report API",
+		"description": "API collection for testing accident report endpoints with file uploads",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Test User\",\n  \"nationalId\": \"1234567890\",\n  \"phone\": \"0501234567\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/register",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "auth", "register"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Create Report - With Files",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE",
+								"description": "Replace with actual token from login/register"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "description",
+									"value": "حادث مروري خطير على طريق الملك فهد مع وجود إصابات",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "{\"latitude\": 24.7136, \"longitude\": 46.6753, \"address\": \"طريق الملك فهد، الرياض\", \"accuracy\": 10}",
+									"type": "text"
+								},
+								{
+									"key": "media_0",
+									"type": "file",
+									"src": [],
+									"description": "Select an image or video file"
+								},
+								{
+									"key": "media_1",
+									"type": "file",
+									"src": [],
+									"description": "Select another image or video file"
+								},
+								{
+									"key": "voice",
+									"type": "file",
+									"src": [],
+									"description": "Select an audio file (.webm, .mp3, .wav)"
+								},
+								{
+									"key": "face_capture",
+									"type": "file",
+									"src": [],
+									"description": "Select a face image"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/reports",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "reports"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Report - No Files (Minimal)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE",
+								"description": "Replace with actual token"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "description",
+									"value": "حادث بسيط للاختبار بدون ملفات",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "{\"latitude\": 24.7136, \"longitude\": 46.6753, \"address\": \"الرياض\", \"accuracy\": 10}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/reports",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "reports"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/reports",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "reports"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/reports/my-reports",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "reports", "my-reports"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Report by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/reports/:id",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "reports", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REPORT_ID_HERE"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/api"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

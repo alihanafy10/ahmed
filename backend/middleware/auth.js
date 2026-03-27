@@ -1,0 +1,57 @@
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
+export const protect = async (req, res, next) => {
+    let token;
+
+    console.log('🔐 Auth headers:', req.headers.authorization);
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+        console.log('❌ No token provided');
+        return res.status(401).json({
+            success: false,
+            message: 'Not authorized to access this route'
+        });
+    }
+
+    try {
+        console.log('🔑 Verifying token...');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('✅ Token decoded:', decoded.id);
+        
+        req.user = await User.findById(decoded.id);
+        
+        if (!req.user) {
+            console.log('❌ User not found in database');
+            return res.status(401).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        console.log('✅ User authenticated:', req.user.nationalId);
+        next();
+    } catch (error) {
+        console.log('❌ Token verification failed:', error.message);
+        return res.status(401).json({
+            success: false,
+            message: 'Not authorized to access this route'
+        });
+    }
+};
+
+export const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: `User role '${req.user.role}' is not authorized to access this route`
+            });
+        }
+        next();
+    };
+};
